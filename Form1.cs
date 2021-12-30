@@ -10,6 +10,7 @@ using System.Windows.Forms;
 using System.IO;
 using System.Text.RegularExpressions;
 using System.Drawing.Imaging;
+using Microsoft.Win32;
 namespace Renamer
 {
     public partial class Form1 : Form
@@ -18,10 +19,14 @@ namespace Renamer
         {
             InitializeComponent();
             resultLabel.Text = "";
+
+            RegistryKey renamerKey = Registry.CurrentUser.CreateSubKey("SOFTWARE\\Johan\\Renamer", true);
+            pathEdt.Text = (string)renamerKey.GetValue("Path","");
         }
 
         private static Regex r = new Regex(":");
 
+        // https://stackoverflow.com/questions/180030/how-can-i-find-out-when-a-picture-was-actually-taken-in-c-sharp-running-on-vista
         //retrieves the datetime WITHOUT loading the whole image
         public static DateTime GetDateTakenFromImage(string path)
         {
@@ -38,6 +43,7 @@ namespace Renamer
         {
             using (var fbd = new FolderBrowserDialog())
             {
+                fbd.SelectedPath = pathEdt.Text;
                 DialogResult result = fbd.ShowDialog();
 
                 if (result == DialogResult.OK && !string.IsNullOrWhiteSpace(fbd.SelectedPath))
@@ -45,18 +51,12 @@ namespace Renamer
                     pathEdt.Text = fbd.SelectedPath;
                     string[] files = Directory.GetFiles(pathEdt.Text);
                     resultLabel.Text = "Found " + files.Length + " files.";
-
+                    RegistryKey renamerKey = Registry.CurrentUser.CreateSubKey("SOFTWARE\\Johan\\Renamer", true);
+                    renamerKey.SetValue("Path", pathEdt.Text);
                 }
             }
         }
 
-      /*  class DateTimeCompare : IComparer<string>
-        {
-            public override int IComparer.Compare(string o1,string o2)
-            {
-                return 0;
-            }
-        }*/
 
         private void button1_Click(object sender, EventArgs e)
         {
