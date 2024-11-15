@@ -30,12 +30,20 @@ namespace Renamer
         //retrieves the datetime WITHOUT loading the whole image
         public static DateTime GetDateTakenFromImage(string path)
         {
-            using (FileStream fs = new FileStream(path, FileMode.Open, FileAccess.Read))
-            using (Image myImage = Image.FromStream(fs, false, false))
+            try
             {
-                PropertyItem propItem = myImage.GetPropertyItem(36867);
-                string dateTaken = r.Replace(Encoding.UTF8.GetString(propItem.Value), "-", 2);
-                return DateTime.Parse(dateTaken);
+                using (FileStream fs = new FileStream(path, FileMode.Open, FileAccess.Read))
+                using (Image myImage = Image.FromStream(fs, false, false))
+                {
+                    PropertyItem propItem = myImage.GetPropertyItem(36867);
+                    string dateTaken = r.Replace(Encoding.UTF8.GetString(propItem.Value), "-", 2);
+                    return DateTime.Parse(dateTaken);
+                }
+            }
+            catch (Exception)
+            {
+                MessageBox.Show("Problem file:" + path);
+                throw;
             }
         }
 
@@ -62,7 +70,19 @@ namespace Renamer
         {
             try
             {
-                string[] files = Directory.GetFiles(pathEdt.Text);
+                List<string> filesList = new List<string>();
+                filesList.AddRange(Directory.GetFiles(pathEdt.Text));
+
+                // Remove non JPG
+                for (int i = 0; i < filesList.Count;i++)
+                {
+                    if (filesList[i].Contains(".jpg") == false)
+                    {
+                        filesList.RemoveAt(i);
+                        i--;
+                    }
+                }
+                string[] files = filesList.ToArray();
                 Array.Sort(files, (emp1, emp2) => GetDateTakenFromImage(emp1).CompareTo(GetDateTakenFromImage(emp2)));
                 string p = prefixEdt.Text;
                 if (p.Length == 0)
@@ -82,7 +102,12 @@ namespace Renamer
             }
             catch (Exception ex)
             {
-                MessageBox.Show(ex.Message);
+                MessageBox.Show(ex.Message + ex.StackTrace);
+                while (ex.InnerException != null)
+                {
+                    ex = ex.InnerException;
+                    MessageBox.Show(ex.Message + ex.StackTrace);
+                }
             }
         }
     }
